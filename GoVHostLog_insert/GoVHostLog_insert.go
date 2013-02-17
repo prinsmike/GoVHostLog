@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"log"
@@ -12,26 +14,23 @@ import (
 type LogEntry struct {
 	Id            bson.ObjectId "_id,omitempty"
 	IP            string        "ip"
-	LIP           string        "lip"
-	RespSize      int           "respSize"
 	Time          int           "time"
-	FileName      string        "filename"
 	ReqProtocol   string        "reqProtocol"
-	KeepAlive     string        "keepalive"
 	ReqMethod     string        "reqMethod"
-	Port          int           "port"
-	ProcessID     int           "processId"
 	QueryString   string        "queryString"
-	OrigRequest   int           "origRequest"
 	LastRequest   int           "lastRequest"
 	ReqTime       time.Time     "reqTime"
 	Path          string        "path"
 	ServerName    string        "serverName"
-	ConnStatus    string        "connStatus"
 	BytesReceived int           "bytesReceived"
 	BytesSent     int           "bytesSent"
 	Referer       string        "Referer"
 	UserAgent     string        "userAgent"
+}
+
+type ErrorEntry struct {
+	Id    bson.ObjectId "_id,omitempty"
+	Error string        "error"
 }
 
 func main() {
@@ -44,19 +43,38 @@ func main() {
 	// Optional. Switch the session to a monotonic behavior.
 	session.SetMode(mgo.Monotonic, true)
 
-	c := session.DB("apache").C("log")
+	db := session.DB("apache")
+	cl := db.C("log")
+	ce := db.C("error")
 
-	dec := json.NewDecoder(os.Stdin)
+	r := bufio.NewReader(os.Stdin)
 
 	for {
 		id := bson.NewObjectId()
 		l := new(LogEntry)
 		l.Id = id
-		if err := dec.Decode(&l); err != nil {
-			log.Println(err)
-			return
+		line, err := r.ReadBytes('\n')
+		if err != nil {
+			e := new(ErrorEntry)
+			e.Id = id
+			e.Error = fmt.Sprintln(err)
+			ce.Insert(&e)
+			continue
 		}
-		err = c.Insert(&l)
+		for i, ch := range line {
+			if ch == 92 {
+				line[i] = 124
+			}
+		}
+		err = json.Unmarshal(line, &l)
+		if err != nil {
+			e := new(ErrorEntry)
+			e.Id = id
+			e.Error = fmt.Sprintln(err)
+			ce.Insert(&e)
+			continue
+		}
+		err = cl.Insert(&l)
 		if err != nil {
 			log.Println(err)
 		}
