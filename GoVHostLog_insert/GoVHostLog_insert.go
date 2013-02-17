@@ -6,7 +6,33 @@ import (
 	"labix.org/v2/mgo/bson"
 	"log"
 	"os"
+	"time"
 )
+
+type LogEntry struct {
+	Id            bson.ObjectId "_id,omitempty"
+	IP            string        "ip"
+	LIP           string        "lip"
+	RespSize      int           "respSize"
+	Time          int           "time"
+	FileName      string        "filename"
+	ReqProtocol   string        "reqProtocol"
+	KeepAlive     string        "keepalive"
+	ReqMethod     string        "reqMethod"
+	Port          int           "port"
+	ProcessID     int           "processId"
+	QueryString   string        "queryString"
+	OrigRequest   int           "origRequest"
+	LastRequest   int           "lastRequest"
+	ReqTime       time.Time     "reqTime"
+	Path          string        "path"
+	ServerName    string        "serverName"
+	ConnStatus    string        "connStatus"
+	BytesReceived int           "bytesReceived"
+	BytesSent     int           "bytesSent"
+	Referer       string        "Referer"
+	UserAgent     string        "userAgent"
+}
 
 func main() {
 	session, err := mgo.Dial("localhost")
@@ -24,8 +50,8 @@ func main() {
 
 	for {
 		id := bson.NewObjectId()
-		var l = make(map[string]interface{})
-		l["_id"] = id
+		l := new(LogEntry)
+		l.Id = id
 		if err := dec.Decode(&l); err != nil {
 			log.Println(err)
 			return
