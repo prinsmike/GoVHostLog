@@ -50,19 +50,16 @@ func main() {
 		}
 	}
 
-	// startDate := fmt.Sprintf("ISODate(\"%s\")", t[0].Format("2006-01-02T15:04"))
-	// endDate := fmt.Sprintf("ISODate(\"%s\")", t[1].Format("2006-01-02T15:04"))
-
 	Stats, err := db(t[0], t[1])
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(Stats)
 	for _, v := range Stats["result"].([]interface{}) {
 		server := v.(map[string]interface{})["_id"]
 		count := float64(v.(map[string]interface{})["logCount"].(int))
 		received := float64(v.(map[string]interface{})["bytesReceived"].(int))
+		fmt.Printf("%T\n", (v.(map[string]interface{})["bytesSent"]))
 		sent := float64(v.(map[string]interface{})["bytesSent"].(int))
 		total := received + sent
 
@@ -95,15 +92,11 @@ func db(startDate, endDate time.Time) (map[string]interface{}, error) {
 	session.SetMode(mgo.Monotonic, true)
 
 	db := session.DB("apache")
-	println(len(os.Args))
-	fmt.Println(startDate)
-	fmt.Println(endDate)
 	var q = []bson.M{
 		bson.M{"$match": bson.M{"reqTime": bson.M{"$gt": startDate, "$lt": endDate}}},
 		bson.M{"$group": bson.M{"_id": "$serverName", "logCount": bson.M{"$sum": 1}, "bytesReceived": bson.M{"$sum": "$bytesReceived"}, "bytesSent": bson.M{"$sum": "$bytesSent"}}},
 		bson.M{"$sort": bson.M{"logCount": 1}},
 	}
-	fmt.Println(q)
 	d := bson.D{{"aggregate", "log"}, {"pipeline", q}}
 
 	var Stats = make(map[string]interface{})
