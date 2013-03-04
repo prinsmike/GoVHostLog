@@ -31,6 +31,7 @@ type LogEntry struct {
 type ErrorEntry struct {
 	Id    bson.ObjectId "_id,omitempty"
 	Error string        "error"
+	Line  string        "line"
 }
 
 func main() {
@@ -48,7 +49,6 @@ func main() {
 	ce := db.C("error")
 
 	r := bufio.NewReader(os.Stdin)
-
 	for {
 		id := bson.NewObjectId()
 		l := new(LogEntry)
@@ -58,6 +58,7 @@ func main() {
 			e := new(ErrorEntry)
 			e.Id = id
 			e.Error = fmt.Sprintln(err)
+			e.Line = fmt.Sprintln(line)
 			ce.Insert(&e)
 			continue
 		}
@@ -71,12 +72,15 @@ func main() {
 			e := new(ErrorEntry)
 			e.Id = id
 			e.Error = fmt.Sprintln(err)
+			e.Line = fmt.Sprintln(line)
 			ce.Insert(&e)
 			continue
 		}
-		err = cl.Insert(&l)
-		if err != nil {
-			log.Println(err)
+		if l.IP != "127.0.0.1" {
+			err = cl.Insert(&l)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }
