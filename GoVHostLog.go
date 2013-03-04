@@ -56,11 +56,23 @@ func main() {
 	}
 
 	for _, v := range Stats["result"].([]interface{}) {
+		var count, received, sent float64
 		server := v.(map[string]interface{})["_id"]
-		count := float64(v.(map[string]interface{})["logCount"].(int))
-		received := float64(v.(map[string]interface{})["bytesReceived"].(int))
-		fmt.Printf("%T\n", (v.(map[string]interface{})["bytesSent"]))
-		sent := float64(v.(map[string]interface{})["bytesSent"].(int))
+		if fmt.Sprintf("%T", (v.(map[string]interface{})["logCount"])) == "int" {
+			count = float64(v.(map[string]interface{})["logCount"].(int))
+		} else {
+			count = float64(v.(map[string]interface{})["logCount"].(int64))
+		}
+		if fmt.Sprintf("%T", (v.(map[string]interface{})["bytesReceived"])) == "int" {
+			received = float64(v.(map[string]interface{})["bytesReceived"].(int))
+		} else {
+			received = float64(v.(map[string]interface{})["bytesReceived"].(int64))
+		}
+		if fmt.Sprintf("%T", (v.(map[string]interface{})["bytesSent"])) == "int" {
+			sent = float64(v.(map[string]interface{})["bytesSent"].(int))
+		} else {
+			sent = float64(v.(map[string]interface{})["bytesSent"].(int64))
+		}
 		total := received + sent
 
 		received, receivedFix := scale(received)
